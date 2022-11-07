@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-
+const { uuid } = require("uuidv4")
 const { db } = require("../mongo");
 
 const sampleBlogs = [
@@ -64,12 +64,76 @@ router.get("/get-one/:id", async (req, res) =>{
 			blog: blog
 		})
 	} catch (error) {
-		console.error(err);
+		console.error(error);
 		res.json({
       success: false,
-      error: err.toString(),
+      error: error.toString(),
     });
 	}
+});
+
+router.post("/create-one", async (req, res) => {
+  try {
+    // create a new post:
+    const newBlog = {
+      ...req.body,
+      createdAt: new Date(),
+      lastModified: new Date(),
+      id: uuid()
+    }
+    const result = await db().collection("blogs").insertOne(newBlog);
+
+    console.log(result)
+    
+    res.json ({
+      success: true
+    })
+
+  } catch (err) {
+    console.error(err);
+		res.json({
+      success: false,
+      error: err.toString()
+    });
+  }
 })
+
+router.put("/update-one/:id", async (req, res) => {
+  try {
+
+    console.log(req.body)
+    const id = req.params.id
+    const text = req.body.text
+    const title = req.body.title
+    const author = req.body.author
+    const categories = req.body.categories
+    const lastModified = new Date()
+
+  const blogPost = await db().collection("blogs").update({
+    id: id
+  },
+  {
+    $set: {
+      text: text,
+      title: title,
+      author: author,
+      categories: categories,
+      lastModified: lastModified
+    },
+  }
+  )
+  
+    res.json ({
+      success: true,
+      putResult: blogPost
+    })
+  } catch (err) {
+    console.error(err);
+		res.json({
+      success: false,
+      error: err.toString()
+    });
+  }
+});
 
 module.exports = router;
